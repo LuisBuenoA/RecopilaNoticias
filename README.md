@@ -1,4 +1,4 @@
-# RecopilaNoticias
+# Recopila Noticias
 
 ## Resumen
 
