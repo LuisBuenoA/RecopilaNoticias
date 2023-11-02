@@ -36,15 +36,16 @@ def obtener_articulos(fecha, url):
         
         for enlace in enlaces:
             # Filtrar los enlaces que parecen ser artículos
-            if (fecha in enlace['href'] or (url == url_el_diario and '.html' in enlace['href']) or (url == url_publico and ('#md=modulo-portada-bloque:' in enlace['href']) )) and ('www.amazon.' not in enlace['href']):
+            if (fecha in enlace['href'] or (url == url_el_diario and '.html' in enlace['href']) or (url == url_publico and ('#md=modulo-portada-bloque:' in enlace['href']) )) and ('www.amazon.' not in enlace['href']) and ('www.mujerhoy.' not in enlace['href']) and ('venagalicia.gal' not in enlace['href']) and ('apple.com' not in enlace['href']) and ('magas.elespanol' not in enlace['href'] ):
                 # Construir el enlace completo al artículo
                 if url == url_el_mundo or url == url_abc or url == url_el_confidencial or 'https://' in enlace['href'] or url == url_la_razon or url == url_marca:
                     enlace_articulo = enlace['href']
-                elif url == url_el_pais or url == url_la_vanguardia or url == url_la_voz_de_galicia or url == url_el_diario or url == url_el_espanol:
+                elif url == url_el_pais:
                     enlace_articulo = url + enlace['href']
-                elif url == url_publico:
+                elif url == url_publico or url == url_la_vanguardia or url == url_la_voz_de_galicia or url == url_el_diario or url == url_el_espanol:
                     url = url.rstrip('/')
                     enlace_articulo = url + enlace['href']
+                    print('El enlace:',enlace_articulo)
                 else:
                     enlace_articulo = url + enlace['href']
 
@@ -78,8 +79,10 @@ def obtener_articulos(fecha, url):
                         cuerpo = soup_articulo.find('div', class_='voc-d')
                     elif url == url_el_confidencial:
                         cuerpo = soup_articulo.find('div', class_='newsType__content')
-                    elif url == url_la_voz_de_galicia:
+                    elif url == url_la_voz_de_galicia or 'https://www.lavozdegalicia' in enlace['href']:
                         cuerpo = soup_articulo.find('div', class_='col sz-dk-67 txt-blk')
+                        if cuerpo is None:
+                            cuerpo = soup_articulo.find('div', class_='col')
                     elif url == url_el_diario:
                         cuerpo = soup_articulo.find('div', class_='partner-wrapper article-page__body-row')
                     elif url == url_publico:
@@ -93,7 +96,12 @@ def obtener_articulos(fecha, url):
                     elif url == url_as:
                         cuerpo = soup_articulo.find('div', class_='art__bo is-unfolded')
                     elif url == url_el_espanol or 'https://' in enlace['href']:
+                        print(enlace['href'])
                         cuerpo = soup_articulo.find('div', class_='article-body__content')
+                        if cuerpo is None:
+                            cuerpo = soup_articulo.find('div', class_='article-body-content')
+                            print(cuerpo)
+                        print(cuerpo)
                     else:
                         cuerpo = soup_articulo.find('div', class_='a_c')
                     
@@ -103,9 +111,10 @@ def obtener_articulos(fecha, url):
                         
                         # Quitar intros duplicados
                         cuerpo_texto = re.sub(r'\n{2,}', '\n', cuerpo_texto)
-
+                        
+                        periodico = url.replace("https://", "").replace(".", "").replace("/", "").replace("com", "").replace(":", "")
                         # Agregar los datos a la lista
-                        datos.append({'Título': titulo_texto, 'Cuerpo': cuerpo_texto, 'Dia y hora': fecha_texto})
+                        datos.append({'Título': titulo_texto, 'Cuerpo': cuerpo_texto, 'Dia y hora': fecha_texto, 'Periódico': periodico})
 
                         guardar=1
 
@@ -114,25 +123,18 @@ def obtener_articulos(fecha, url):
         # Crear un DataFrame a partir de los datos
         df = pd.DataFrame(datos)
 
-        # Obtener la fecha y hora actual
-        fecha_hora_actual = datetime.now()
-
-        # Formatear la fecha y hora como una cadena (sin microsegundos)
-        fecha_hora_formateada = fecha_hora_actual.strftime('%Y-%m-%d_%H-%M-%S')
-
         # Guardar el DataFrame en un archivo CSV
+        print(guardar)
         if guardar==1:
             csv_filename = (
                 url.replace("https://", "")
                 .replace(".", "")
                 .replace("/", "")
                 .replace("com", "")
-                .replace(":", "-")
-                + '_'
-                + fecha_hora_formateada
+                .replace(":", "")
                 + '.csv'
             )
-            df.to_csv(csv_filename, index=False)
+            df.to_csv(csv_filename, index=True)
     except requests.exceptions.HTTPError as http_err:
         print(f'Error HTTP: {http_err}')
     except Exception as err:
@@ -150,13 +152,13 @@ url_el_confidencial = 'https://elconfidencial.com/'
 url_la_voz_de_galicia = 'https://lavozdegalicia.es/'
 url_el_diario = 'https://eldiario.es/'
 #url_publico = 'https://publico.es/' #Error al hacer muchos requests
-url_el_espanol = 'https://elespanol.com/'
+#url_el_espanol = 'https://elespanol.com/' #antes iba pero ya no
 url_la_razon = 'https://larazon.es/'
 url_marca = 'https://marca.com/'
 #url_as = 'https://as.com/' #Lógica de enlaces muy distinta del resto
 
 urls = []
-urls.extend([url_el_mundo, url_el_pais, url_la_vanguardia, url_el_confidencial, url_la_voz_de_galicia, url_el_diario, url_el_espanol, url_la_razon, url_marca])
+urls.extend([url_el_mundo, url_el_pais, url_la_vanguardia, url_el_confidencial, url_la_voz_de_galicia, url_el_diario, url_la_razon, url_marca])
 
 for url in urls:
     print('Periodico:', url)
