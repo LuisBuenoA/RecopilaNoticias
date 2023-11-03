@@ -45,7 +45,6 @@ def obtener_articulos(fecha, url):
                 elif url == url_publico or url == url_la_vanguardia or url == url_la_voz_de_galicia or url == url_el_diario or url == url_el_espanol:
                     url = url.rstrip('/')
                     enlace_articulo = url + enlace['href']
-                    print('El enlace:',enlace_articulo)
                 else:
                     enlace_articulo = url + enlace['href']
 
@@ -114,7 +113,7 @@ def obtener_articulos(fecha, url):
                         
                         periodico = url.replace("https://", "").replace(".", "").replace("/", "").replace("com", "").replace(":", "")
                         # Agregar los datos a la lista
-                        datos.append({'Título': titulo_texto, 'Cuerpo': cuerpo_texto, 'Dia y hora': fecha_texto, 'Periódico': periodico})
+                        datos.append({'Título': titulo_texto, 'Cuerpo': cuerpo_texto, 'Fecha': fecha_texto, 'Periódico': periodico})
 
                         guardar=1
 
