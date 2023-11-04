@@ -1,34 +1,4 @@
-import datetime
-import numpy as np
 import pandas as pd
-from datetime import date, timedelta, datetime
-import sklearn.datasets 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-import missingno as msno
-
-from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
-from sklearn.metrics import (adjusted_mutual_info_score, homogeneity_score,
-                            completeness_score,classification_report, confusion_matrix,
-                            mean_squared_error, mean_absolute_error,
-                            mean_absolute_percentage_error,
-                            silhouette_score, v_measure_score, adjusted_rand_score)
-from sklearn.linear_model import ElasticNet, SGDClassifier, LogisticRegression
-from sklearn.cluster import KMeans, DBSCAN, AffinityPropagation
-from sklearn import datasets
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-
-from matplotlib import colors
-
-import plotly.graph_objects as go
-import plotly.express as px
-import statsmodels.api as sm
-
-from imblearn.over_sampling import RandomOverSampler
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -44,6 +14,7 @@ def noticiasSimilares(df_periodicos):
     cuerpos = df_periodicos["Cuerpo"].fillna('').tolist()
     fechas = df_periodicos["Fecha"].fillna('').tolist()
     periodicos = df_periodicos["Periódico"].tolist()
+    enlaces = df_periodicos["Enlace"].fillna('').tolist() 
 
     titulares_procesados = preprocess_text(titulares)
     cuerpos_procesados = preprocess_text(cuerpos)
@@ -57,18 +28,31 @@ def noticiasSimilares(df_periodicos):
         noticias_similares_titulares = []
         noticias_similares_cuerpos = []
 
+        primer_titular_similar = None  
+
         for j in range(len(titulares)):
-            if similarity_matrix_titulares[i][j] > umbral_similitud and (periodicos[i] != periodicos[j]):
-                noticias_similares_titulares.append((periodicos[j], j))
+            if similarity_matrix_titulares[i][j] > umbral_similitud:
+                
+                if (periodicos[i] != periodicos[j]):
+                    noticias_similares_titulares.append((periodicos[j], j))
+
+                if primer_titular_similar is None:
+                    primer_titular_similar = titulares[j]
 
             if similarity_matrix_cuerpos[i][j] > umbral_similitud and (periodicos[i] != periodicos[j]):
                 noticias_similares_cuerpos.append((periodicos[j], j))
 
-        noticias_similares.append((periodicos[i], i, fechas[i], titulares[i], cuerpos[i], noticias_similares_titulares, noticias_similares_cuerpos))
+        noticias_similares.append((periodicos[i], i, fechas[i], titulares[i], cuerpos[i], noticias_similares_titulares, noticias_similares_cuerpos, primer_titular_similar, enlaces[i]))  
 
+    # Pasada adicional para actualizar los primeros titulares similares
+    for i, (_, _, _, _, _, tit_similares, _, _, primer_titular_similar) in enumerate(noticias_similares):
+        for _, j in tit_similares:
+            if j < len(noticias_similares):
+                peri, idx, _, _, _, _, _, _, titulares_j = noticias_similares[j]
+                noticias_similares[j] = (peri, idx, _, _, _, _, _, _, primer_titular_similar if primer_titular_similar else titulares_j)
     return noticias_similares
 
-def preprocess_text(text):
+def preprocess_text(texto):
     nltk.download('punkt')
     nltk.download('stopwords')
     stop_words = set(stopwords.words('spanish'))
@@ -79,13 +63,15 @@ def preprocess_text(text):
         tokens = [ps.stem(t) for t in tokens if t.isalnum() and t not in stop_words]
         return ' '.join(tokens)
 
-    return [preprocess(t) for t in text]
+    if isinstance(texto, list):
+        return [preprocess(t) for t in texto]
+    else:
+        return preprocess(texto)
 
 def calculate_similarity(textos_preprocesados):
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(textos_preprocesados)
     return cosine_similarity(tfidf_matrix)
-
 
 # Importamos los datos
 df_elmundo = pd.read_csv("elmundoes.csv")
@@ -102,8 +88,9 @@ df_periodicos = pd.concat([df_elmundo, df_elpais, df_lavanguardia, df_elconfiden
 
 noticias_similares = noticiasSimilares(df_periodicos)
 
+print(noticias_similares)
 # Crear DataFrame con noticias similares
-df_similares = pd.DataFrame(noticias_similares, columns=['Periódico', 'Índice', 'Fecha', 'Título', 'Cuerpo', 'Títulos Similares', 'Cuerpos Similares'])
+df_similares = pd.DataFrame(noticias_similares, columns=['Periódico', 'Índice', 'Fecha', 'Título', 'Cuerpo', 'Títulos Similares', 'Cuerpos Similares', 'Enlace', 'Primer Titular Similar'])
 
 # Guardar el DataFrame en un archivo CSV
 df_similares.to_csv("noticiasSimilares.csv", index=False)

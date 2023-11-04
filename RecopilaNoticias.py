@@ -36,7 +36,7 @@ def obtener_articulos(fecha, url):
         
         for enlace in enlaces:
             # Filtrar los enlaces que parecen ser artículos
-            if (fecha in enlace['href'] or (url == url_el_diario and '.html' in enlace['href']) or (url == url_publico and ('#md=modulo-portada-bloque:' in enlace['href']) )) and ('www.amazon.' not in enlace['href']) and ('www.mujerhoy.' not in enlace['href']) and ('venagalicia.gal' not in enlace['href']) and ('apple.com' not in enlace['href']) and ('magas.elespanol' not in enlace['href'] ):
+            if (fecha in enlace['href'] or (url == url_el_diario and '.html' in enlace['href']) or (url == url_publico and ('#md=modulo-portada-bloque:' in enlace['href']) )) and ('www.amazon.' not in enlace['href']) and ('www.mujerhoy.' not in enlace['href']) and ('venagalicia.gal' not in enlace['href']) and ('apple.com' not in enlace['href']) and ('magas.elespanol' not in enlace['href'] ) and ('mundodeportivo.com' not in enlace['href'])  and ('eldiarioar.com' not in enlace['href'] ) and ('//branded.' not in enlace['href'] ) and ('.com/vela/' not in enlace['href'] ):
                 # Construir el enlace completo al artículo
                 if url == url_el_mundo or url == url_abc or url == url_el_confidencial or 'https://' in enlace['href'] or url == url_la_razon or url == url_marca:
                     enlace_articulo = enlace['href']
@@ -113,7 +113,7 @@ def obtener_articulos(fecha, url):
                         
                         periodico = url.replace("https://", "").replace(".", "").replace("/", "").replace("com", "").replace(":", "")
                         # Agregar los datos a la lista
-                        datos.append({'Título': titulo_texto, 'Cuerpo': cuerpo_texto, 'Fecha': fecha_texto, 'Periódico': periodico})
+                        datos.append({'Título': titulo_texto, 'Cuerpo': cuerpo_texto, 'Fecha': fecha_texto, 'Periódico': periodico, 'Enlace': enlace_articulo})
 
                         guardar=1
 
@@ -133,7 +133,7 @@ def obtener_articulos(fecha, url):
                 .replace(":", "")
                 + '.csv'
             )
-            df.to_csv(csv_filename, index=True)
+            df.to_csv(csv_filename, index=False)
     except requests.exceptions.HTTPError as http_err:
         print(f'Error HTTP: {http_err}')
     except Exception as err:
