@@ -36,7 +36,7 @@ def obtener_articulos(fecha, url):
         
         for enlace in enlaces:
             # Filtrar los enlaces que parecen ser artículos
-            if (fecha in enlace['href'] or (url == url_el_diario and '.html' in enlace['href']) or (url == url_publico and ('#md=modulo-portada-bloque:' in enlace['href']) )) and ('www.amazon.' not in enlace['href']) and ('www.mujerhoy.' not in enlace['href']) and ('venagalicia.gal' not in enlace['href']) and ('apple.com' not in enlace['href']) and ('magas.elespanol' not in enlace['href'] ) and ('mundodeportivo.com' not in enlace['href'])  and ('eldiarioar.com' not in enlace['href'] ) and ('//branded.' not in enlace['href'] ) and ('.com/vela/' not in enlace['href'] ):
+            if (fecha in enlace['href'] or (url == url_el_diario and '.html' in enlace['href']) or (url == url_publico and ('#md=modulo-portada-bloque:' in enlace['href']) )) and ('www.amazon.' not in enlace['href']) and ('www.mujerhoy.' not in enlace['href']) and ('venagalicia.gal' not in enlace['href']) and ('apple.com' not in enlace['href']) and ('magas.elespanol' not in enlace['href'] ) and ('mundodeportivo.com' not in enlace['href'])  and ('eldiarioar.com' not in enlace['href'] ) and ('//branded.' not in enlace['href'] ) and ('.com/vela/' not in enlace['href'] ) and ('.htmlhttps://' not in enlace['href'] ):
                 # Construir el enlace completo al artículo
                 if url == url_el_mundo or url == url_abc or url == url_el_confidencial or 'https://' in enlace['href'] or url == url_la_razon or url == url_marca:
                     enlace_articulo = enlace['href']
@@ -118,22 +118,21 @@ def obtener_articulos(fecha, url):
                         guardar=1
 
                     titulo_ant = titulo
-
+        print(guardar)
         # Crear un DataFrame a partir de los datos
         df = pd.DataFrame(datos)
 
-        # Guardar el DataFrame en un archivo CSV
-        print(guardar)
-        if guardar==1:
-            csv_filename = (
+        # Guardar el DataFrame en un archivo Excel
+        if guardar == 1:
+            excel_filename = (
                 url.replace("https://", "")
                 .replace(".", "")
                 .replace("/", "")
                 .replace("com", "")
                 .replace(":", "")
-                + '.csv'
+                + '.xlsx'
             )
-            df.to_csv(csv_filename, index=False)
+            df.to_excel(excel_filename, index=False)
     except requests.exceptions.HTTPError as http_err:
         print(f'Error HTTP: {http_err}')
     except Exception as err:

@@ -23,36 +23,39 @@ def noticiasSimilares(df_periodicos):
     similarity_matrix_cuerpos = calculate_similarity(cuerpos_procesados)
 
     umbral_similitud = 0.5
+    k=0
 
     for i in range(len(titulares)):
         noticias_similares_titulares = []
-        noticias_similares_cuerpos = []
 
         primer_titular_similar = None  
 
         for j in range(len(titulares)):
-            if similarity_matrix_titulares[i][j] > umbral_similitud:
+            if similarity_matrix_titulares[i][j] > umbral_similitud or similarity_matrix_cuerpos[i][j] > umbral_similitud:
                 
                 if (periodicos[i] != periodicos[j]):
                     noticias_similares_titulares.append((periodicos[j], j))
+                    k+=1
 
                 if primer_titular_similar is None:
                     primer_titular_similar = titulares[j]
 
-            if similarity_matrix_cuerpos[i][j] > umbral_similitud and (periodicos[i] != periodicos[j]):
-                noticias_similares_cuerpos.append((periodicos[j], j))
-
-        noticias_similares.append((periodicos[i], i, fechas[i], titulares[i], cuerpos[i], noticias_similares_titulares, noticias_similares_cuerpos, primer_titular_similar, enlaces[i]))  
+        noticias_similares.append((periodicos[i], fechas[i], titulares[i], cuerpos[i], k, noticias_similares_titulares, primer_titular_similar, enlaces[i]))  
 
     # Pasada adicional para actualizar los primeros titulares similares
-    for i, (_, _, _, _, _, tit_similares, _, _, primer_titular_similar) in enumerate(noticias_similares):
-        for _, j in tit_similares:
-            if j < len(noticias_similares):
-                peri, idx, _, _, _, _, _, _, titulares_j = noticias_similares[j]
-                noticias_similares[j] = (peri, idx, _, _, _, _, _, _, primer_titular_similar if primer_titular_similar else titulares_j)
+    for i, (_, _, _, _, _, tit_similares, primer_titular_similar, _) in enumerate(noticias_similares):
+        if tit_similares:
+            for item in tit_similares:
+                if isinstance(item, tuple):  # Handle tuples
+                    _, j = item
+                    if j < len(noticias_similares):
+                        peri, _, _, _, _, _, titulares_j, _ = noticias_similares[j]
+                        noticias_similares[j] = (peri, _, _, _, _, _, primer_titular_similar if primer_titular_similar else titulares_j, _)
+                else:  # Handle strings (links)
+                    print(f"Skipping link: {item}")
     return noticias_similares
 
-def preprocess_text(texto):
+def preprocess_text(text):
     nltk.download('punkt')
     nltk.download('stopwords')
     stop_words = set(stopwords.words('spanish'))
@@ -63,34 +66,31 @@ def preprocess_text(texto):
         tokens = [ps.stem(t) for t in tokens if t.isalnum() and t not in stop_words]
         return ' '.join(tokens)
 
-    if isinstance(texto, list):
-        return [preprocess(t) for t in texto]
-    else:
-        return preprocess(texto)
+    return [preprocess(t) for t in text]
 
 def calculate_similarity(textos_preprocesados):
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(textos_preprocesados)
     return cosine_similarity(tfidf_matrix)
 
+
 # Importamos los datos
-df_elmundo = pd.read_csv("elmundoes.csv")
-df_elpais = pd.read_csv("elpais.csv")
-df_lavanguardia = pd.read_csv("lavanguardia.csv")
-df_elconfidencial = pd.read_csv("elconfidencial.csv")
-df_lavozdegaliciaes = pd.read_csv("lavozdegaliciaes.csv")
-df_eldiarioes = pd.read_csv("eldiarioes.csv")
-#df_elespanol = pd.read_csv("elespanol.csv")
-df_larazones = pd.read_csv("larazones.csv")
-df_marca = pd.read_csv("marca.csv")
+df_elmundo = pd.read_excel("elmundoes.xlsx")
+df_elpais = pd.read_excel("elpais.xlsx")
+df_lavanguardia = pd.read_excel("lavanguardia.xlsx")
+df_elconfidencial = pd.read_excel("elconfidencial.xlsx")
+df_lavozdegaliciaes = pd.read_excel("lavozdegaliciaes.xlsx")
+df_eldiarioes = pd.read_excel("eldiarioes.xlsx")
+#df_elespanol = pd.read_excel("elespanol.xlsx")
+df_larazones = pd.read_excel("larazones.xlsx")
+df_marca = pd.read_excel("marca.xlsx")
 
 df_periodicos = pd.concat([df_elmundo, df_elpais, df_lavanguardia, df_elconfidencial, df_lavozdegaliciaes, df_eldiarioes, df_larazones, df_marca], axis=0)
 
 noticias_similares = noticiasSimilares(df_periodicos)
 
-print(noticias_similares)
 # Crear DataFrame con noticias similares
-df_similares = pd.DataFrame(noticias_similares, columns=['Periódico', 'Índice', 'Fecha', 'Título', 'Cuerpo', 'Títulos Similares', 'Cuerpos Similares', 'Enlace', 'Primer Titular Similar'])
+df_similares = pd.DataFrame(noticias_similares, columns=['Periódico', 'Fecha', 'Título', 'Cuerpo', 'Indice de Similares', 'Títulos Similares', 'Titulo Compartido', 'Enlace'])
 
-# Guardar el DataFrame en un archivo CSV
-df_similares.to_csv("noticiasSimilares.csv", index=False)
+# Guardar el DataFrame en un archivo Excel
+df_similares.to_excel("noticiasSimilares.xlsx", index=False)
