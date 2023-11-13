@@ -23,7 +23,6 @@ def noticiasSimilares(df_periodicos):
     similarity_matrix_cuerpos = calculate_similarity(cuerpos_procesados)
 
     umbral_similitud = 0.5
-    k=0
 
     for i in range(len(titulares)):
         noticias_similares_titulares = []
@@ -34,26 +33,39 @@ def noticiasSimilares(df_periodicos):
             if similarity_matrix_titulares[i][j] > umbral_similitud or similarity_matrix_cuerpos[i][j] > umbral_similitud:
                 
                 if (periodicos[i] != periodicos[j]):
-                    noticias_similares_titulares.append((periodicos[j], j))
-                    k+=1
+                    noticias_similares_titulares.append((titulares[j], j))
 
                 if primer_titular_similar is None:
                     primer_titular_similar = titulares[j]
 
-        noticias_similares.append((periodicos[i], fechas[i], titulares[i], cuerpos[i], k, noticias_similares_titulares, primer_titular_similar, enlaces[i]))  
+        noticias_similares.append((periodicos[i], fechas[i], titulares[i], cuerpos[i], noticias_similares_titulares, primer_titular_similar, enlaces[i]))  
 
     # Pasada adicional para actualizar los primeros titulares similares
-    for i, (_, _, _, _, _, tit_similares, primer_titular_similar, _) in enumerate(noticias_similares):
+    for i, (_, _, _, _, tit_similares, primer_titular_similar, _) in enumerate(noticias_similares):
         if tit_similares:
             for item in tit_similares:
                 if isinstance(item, tuple):  # Handle tuples
-                    _, j = item
+                    tit_similar, j = item
                     if j < len(noticias_similares):
-                        peri, _, _, _, _, _, titulares_j, _ = noticias_similares[j]
-                        noticias_similares[j] = (peri, _, _, _, _, _, primer_titular_similar if primer_titular_similar else titulares_j, _)
-                else:  # Handle strings (links)
+                        peri, _, _, _, _, _, _ = noticias_similares[j]
+                        noticias_similares[j] = (peri, _, _, _, _, primer_titular_similar if primer_titular_similar else tit_similar, _)
+                elif isinstance(item, str):  # Handle strings (links)
                     print(f"Skipping link: {item}")
+                else:
+                    print(f"Unexpected item: {item}")
+
+    # Asignar el mismo Título Compartido a todas las noticias similares
+    for i, (_, _, _, _, tit_similares, _, _) in enumerate(noticias_similares):
+        for item in tit_similares:
+            if isinstance(item, tuple):
+                _, j = item
+                noticias_similares[j] = (*noticias_similares[j][:6], tit_similares, *noticias_similares[j][7:])
+            else:
+                print(f"Unexpected item: {item}")
+
+
     return noticias_similares
+
 
 def preprocess_text(text):
     nltk.download('punkt')
@@ -90,7 +102,7 @@ df_periodicos = pd.concat([df_elmundo, df_elpais, df_lavanguardia, df_elconfiden
 noticias_similares = noticiasSimilares(df_periodicos)
 
 # Crear DataFrame con noticias similares
-df_similares = pd.DataFrame(noticias_similares, columns=['Periódico', 'Fecha', 'Título', 'Cuerpo', 'Indice de Similares', 'Títulos Similares', 'Titulo Compartido', 'Enlace'])
+df_similares = pd.DataFrame(noticias_similares, columns=['Periódico', 'Fecha', 'Título', 'Cuerpo', 'Títulos Similares', 'Titulo Compartido', 'Enlace'])
 
 # Guardar el DataFrame en un archivo Excel
 df_similares.to_excel("noticiasSimilares.xlsx", index=False)
