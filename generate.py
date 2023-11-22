@@ -14,8 +14,7 @@ def generate_square(titulo_compartido, fecha, periodico_seleccionado=None):
         'color': 'black',  # El color del texto, igual al texto normal
         'textDecoration': 'none',  # Elimina el subrayado de los enlaces
         'font-weight': 'bold',  # Hace que la fuente sea en negrita como un encabezado
-        'font-size': '24px',  # Ajusta el tamaño del texto al de un encabezado
-        'margin': '10px 30px 10px 30px'
+        'font-size': '24px' # Ajusta el tamaño del texto al de un encabezado
     }
 
     # Crea una lista de componentes hijos que incluyen el enlace, la fecha y la gráfica
@@ -31,7 +30,7 @@ def generate_square(titulo_compartido, fecha, periodico_seleccionado=None):
 
     return html.Div(
         className='six columns',  # Clase CSS para estilos
-        style={'margin': '10px 30px 10px 30px'},  # Añade un margen inferior para separar los cuadrados
+        style={'margin': '10px 30px 0px 30px'},  # Añade un margen inferior para separar los cuadrados
         children=children
     )
 
@@ -49,13 +48,14 @@ def generate_similar_news(primer_titular_comun, periodico_seleccionado=None):
 
     if datos_titulares.shape[0] > 0:
         opciones_periodicos = [{'label': nombre_periodicos[periodico], 'value': periodico} for periodico in periodicos_disponibles]
+        titulo_selector = html.H4(['Filtra el periódico que quieras'], style={'font-weight': 'bold','margin': '5px 10px 5px 10px'})
         selector_periodico = dcc.Dropdown(
             id='newspaper-selector',
             options = [{'label': 'TODOS LOS PERIÓDICOS', 'value': 'TODOS LOS PERIÓDICOS'}] + opciones_periodicos,
             value = periodico_seleccionado,
-            clearable=False
+            clearable=False,
+            style={'margin': '5px 0px 5px 0px'}
         )
-        titulares_similares_div.insert(0, selector_periodico)
 
     datos_titulares['Periódico Formateado'] = datos_titulares['Periódico'].map(nombre_periodicos) 
 
@@ -64,6 +64,8 @@ def generate_similar_news(primer_titular_comun, periodico_seleccionado=None):
 
     # Añade el espectro al layout de los titulares similares
     titulares_similares_div.append(spectrum)
+    titulares_similares_div.insert(1, titulo_selector)
+    titulares_similares_div.insert(2, selector_periodico)
 
     # Define estilos para que los enlaces parezcan encabezados en lugar de enlaces
     link_style = {

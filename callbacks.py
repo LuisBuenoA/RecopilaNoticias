@@ -1,6 +1,6 @@
 from datetime import datetime
 from dash import html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 from generate import generate_square, generate_similar_news
 from data import df
 import urllib.parse
@@ -14,7 +14,7 @@ def register_callbacks(app):
     )
     def update_selected_newspaper(value):
         return value
-
+    
     @app.callback(
         Output('page-content', 'children'),
         [Input('url', 'pathname'), Input('selected-newspaper-store', 'data')]
@@ -24,15 +24,26 @@ def register_callbacks(app):
             common_title = urllib.parse.unquote(pathname.split('/')[-1])
 
             # Botón o enlace para volver a la página principal
-            back_button = html.A(
-                children=[html.I(className="fa fa-arrow-left")],  # Solo ícono de flecha
-                href="/",  # Ruta de la página principal
-                style={
-                    'position': 'absolute', 'top': '10px', 'left': '10px',  # Estilos para posicionar la flecha
-                    'textDecoration': 'none', 'color': 'black',
-                    'fontSize': '24px',
-                    'margin-bottom': '30px'
-                }
+            back_button = back_button = html.A(
+                html.Button(
+                    "Atrás",  # Texto del botón
+                    id='back-button',  # Identificador único para el botón
+                    style={
+                        'position': 'relative', 'top': '10px', 'left': '10px',  # Estilos para posicionar el botón
+                        'textDecoration': 'none',
+                        'fontSize': '16px',  # Tamaño de la fuente
+                        'fontWeight': 'bold',  # Peso de la fuente
+                        'padding': '10px 20px',  # Relleno alrededor del texto
+                        'backgroundColor': '#222222',  # Color de fondo del botón
+                        'color': 'white',  # Color del texto
+                        'border': 'none',  # Sin borde
+                        'borderRadius': '5px',  # Bordes redondeados
+                        'cursor': 'pointer',  # Cursor en forma de mano al pasar por encima
+                        'boxShadow': '0px 2px 2px lightgrey',  # Sombra del botón
+                        'margin-bottom': '10px'
+                    }
+                ),
+                href='/'  # Enlace a la página principal
             )
 
             # Si selected_newspaper_data es "TODOS LOS PERIÓDICOS" o None, no aplicar ningún filtro
@@ -58,5 +69,3 @@ def register_callbacks(app):
             square = generate_square(common_title, formatted_date)
             similar_news = generate_similar_news(common_title, selected_newspaper_data)
             return [back_button] + [square] + similar_news
-        else:
-            return create_layout()

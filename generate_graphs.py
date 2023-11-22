@@ -3,6 +3,33 @@ import plotly.express as px
 from utils import parse_date
 from data import df, nombre_periodicos, colores_periodicos
 
+def generate_newspaper_graph():
+    # Categorizar cada noticia
+    df['Categoría'] = df['Titulo Compartido'].apply(lambda x: 'Con Titulares Similares' if x != 'Ninguno' else 'Sin Titulares Similares')
+
+    # Agrupar por periódico y categoría, y contar
+    newspaper_counts = df.groupby(['Periódico', 'Categoría']).size().reset_index(name='Número de Noticias')
+
+    # Crear el gráfico de barras
+    fig = px.bar(
+        newspaper_counts,
+        x='Periódico',
+        y='Número de Noticias',
+        color='Categoría',  # Colorear las barras por categoría
+        title='Número de Noticias por Periódico',
+        barmode='stack'  # Apilar las barras
+    )
+
+    # Ajustar el layout según sea necesario
+    fig.update_layout(
+        xaxis_title="",  # Eliminar el título del eje X
+        yaxis_title="",  # Eliminar el título del eje Y
+        showlegend=True,  # Mostrar leyenda para distinguir categorías
+        xaxis={'categoryorder':'total descending'}
+    )
+
+    return dcc.Graph(figure=fig)
+
 def generate_time_graph(titulo_compartido, periodico_seleccionado = None):
 
     noticias_filtradas = df[df['Titulo Compartido'] == titulo_compartido].copy()
@@ -48,14 +75,21 @@ def generate_time_graph(titulo_compartido, periodico_seleccionado = None):
     
     # Ajustar el layout del gráfico
     fig.update_layout(
-        xaxis_title='Fecha',
+        xaxis=dict(
+            title=None,
+        ),
         yaxis=dict(
             showticklabels=False,  # Oculta las etiquetas del eje Y
             title=None,  # Elimina el título del eje Y
+            showgrid=True,  # Muestra las líneas de la cuadrícula horizontal
+            gridcolor='rgba(128,128,128,0.2)',  # El color y la transparencia de la cuadrícula
+            tickvals=[ 0.01, 0.25, 0.5, 0.75, 1]
         ),
         showlegend=False,  # Oculta la leyenda
         margin=dict(l=50, r=50, t=50, b=50),
-        hovermode='closest'
+        hovermode='closest',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
     )
 
     # Ajustar el texto dentro de las barras y la información mostrada al pasar el ratón
@@ -123,7 +157,7 @@ def generate_media_spectrum(titulares_similares, periodico_seleccionado=None):
             imagen_url = imagenes_periodicos.get(periodico, 'assets/default_image.png')
             if periodico_seleccionado is None or periodico == periodico_seleccionado:
                 logo_link = html.A(
-                    html.Img(src=imagen_url, style={'height': '60px', 'margin': '0 10px'})
+                    html.Img(src=imagen_url, style={'height': '60px', 'margin': '0 0 0 20px'})
                 )
                 logos_orientacion.append(logo_link)
                 periodicos_representados.add(periodico)
