@@ -1,50 +1,62 @@
+from datetime import datetime
+from dash import html
 from dash.dependencies import Input, Output, State
 from generate import generate_square, generate_similar_news
-from data import df,df_similares, titulo_compartido_set
-import dash
+from data import df
 import urllib.parse
+from layout import create_layout
+from utils import parse_date
 
 def register_callbacks(app):
-    # Callback que actualiza el store basado en la selección del usuario
     @app.callback(
         Output('selected-newspaper-store', 'data'),
-        [Input('newspaper-selector', 'value')]  # Suponiendo que 'newspaper-selector' es el ID del componente de selección
+        [Input('newspaper-selector', 'value')]
     )
-    def update_selected_newspaper(selected_newspaper):
-        return {'selected_newspaper': selected_newspaper}
+    def update_selected_newspaper(value):
+        return value
 
     @app.callback(
         Output('page-content', 'children'),
-        [Input('url', 'pathname'), State('selected-newspaper-store', 'data')],
-        [State('page-content', 'children')]  # Añadir el estado actual del contenido de la página
+        [Input('url', 'pathname'), Input('selected-newspaper-store', 'data')]
     )
-    def update_page_content(pathname, selected_newspaper_data, current_content):
-        selected_newspaper = selected_newspaper_data.get('selected_newspaper') if selected_newspaper_data else None
+    def update_page_content(pathname, selected_newspaper_data):
+        if pathname.startswith('/similar/'):
+            common_title = urllib.parse.unquote(pathname.split('/')[-1])
 
-        if not pathname.startswith('/similar/'):
-            # Si la ruta no es '/similar/', retorna el contenido por defecto
-            return [
-                generate_square(titulo_compartido, fecha)
-                for titulo_compartido, fecha, _ in sorted(
-                    [
-                        (titulo_compartido, fecha, len(df_similares.get_group(titulo_compartido)))
-                        for titulo_compartido, fecha in zip(df['Titulo Compartido'], df['Fecha'])
-                    ],
-                    key=lambda x: x[2], 
-                    reverse=True
-                )
-                if titulo_compartido != "Ninguno" and titulo_compartido not in titulo_compartido_set and (titulo_compartido_set.add(titulo_compartido) or True)
-            ]
+            # Botón o enlace para volver a la página principal
+            back_button = html.A(
+                children=[html.I(className="fa fa-arrow-left")],  # Solo ícono de flecha
+                href="/",  # Ruta de la página principal
+                style={
+                    'position': 'absolute', 'top': '10px', 'left': '10px',  # Estilos para posicionar la flecha
+                    'textDecoration': 'none', 'color': 'black',
+                    'fontSize': '24px',
+                    'margin-bottom': '30px'
+                }
+            )
 
-        # Si la ruta es '/similar/', pero la URL no ha cambiado, mantenemos el contenido actual
-        if current_content and any('/similar/' in str(child) for child in current_content):
-            return dash.no_update
+            # Si selected_newspaper_data es "TODOS LOS PERIÓDICOS" o None, no aplicar ningún filtro
+            if selected_newspaper_data in [None, "TODOS LOS PERIÓDICOS"]:
+                selected_newspaper_data = None
 
-        # Si la ruta es '/similar/' y la URL ha cambiado, genera un nuevo contenido
-        common_title = urllib.parse.unquote(pathname.split('/')[-1])
-        first_news = df[df['Titulo Compartido'] == common_title].iloc[0]
-        fecha = first_news['Fecha']
+            # Obtener todas las fechas para este titular y el periódico correspondiente
+            grupo_datos = df[df['Titulo Compartido'] == common_title]
+            fechas_validas = [(d, grupo_datos[grupo_datos['Fecha'] == d]['Periódico'].iloc[0]) for d in grupo_datos['Fecha'] if d is not None]
 
-        square = generate_square(common_title, fecha, selected_newspaper)
-        similar_news = generate_similar_news(common_title, selected_newspaper)
-        return [square] + similar_news
+            # Encontrar la fecha más antigua y procesarla
+            if fechas_validas:
+                fecha_mas_antigua, nombre_periodico = min(
+                    fechas_validas,
+                    key=lambda x: parse_date(x[0], x[1]) or datetime.max)  # Usa datetime.max como valor por defecto
+
+                processed_date = parse_date(fecha_mas_antigua, nombre_periodico)  # Pasa el nombre real del periódico
+                formatted_date = processed_date.strftime('%Y/%m-%d %H:%M') if processed_date else 'Fecha desconocida'
+
+            else:
+                formatted_date = 'Fecha desconocida'
+
+            square = generate_square(common_title, formatted_date)
+            similar_news = generate_similar_news(common_title, selected_newspaper_data)
+            return [back_button] + [square] + similar_news
+        else:
+            return create_layout()

@@ -73,7 +73,7 @@ def generate_time_graph(titulo_compartido, periodico_seleccionado = None):
     )
 
     # Ajustar la altura de la figura para que las barras no sean demasiado delgadas
-    fig_height = max(400, len(noticias_filtradas) * 20)
+    fig_height = max(300, len(noticias_filtradas) * 20)
     fig.update_layout(height=fig_height)
 
     return dcc.Graph(figure=fig)
@@ -132,7 +132,7 @@ def generate_media_spectrum(titulares_similares, periodico_seleccionado=None):
             orientacion_texto_div = html.P(orientacion_texto, style={'font-weight': 'bold', 'text-align': 'left'})
             logos_div = html.Div(
                 children=logos_orientacion,
-                style={'display': 'inline-block'}
+                style={'display': 'inline-block', 'margin': '1px 30px 1px 30px'}
             )
 
             periódicos_por_orientación[orientacion] = {
@@ -143,7 +143,7 @@ def generate_media_spectrum(titulares_similares, periodico_seleccionado=None):
     # Crea los elementos finales con orientación política y logotipos únicos
     spectrum_divs = []
     for orientacion, data in periódicos_por_orientación.items():
-        spectrum_divs.append(html.Div([data['orientacion_texto'], data['logos']]))
+        spectrum_divs.append(html.Div([data['orientacion_texto'], data['logos']], style={'margin': '1px 30px 1px 30px'}))
 
     # Contenedor para el espectro político
     spectrum_container = html.Div(
