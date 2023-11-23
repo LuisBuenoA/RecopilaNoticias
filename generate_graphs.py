@@ -4,28 +4,78 @@ from utils import parse_date
 from data import df, nombre_periodicos, colores_periodicos
 
 def generate_scatter_titles():
-    # Convertir la columna de fecha a un tipo de dato de fecha
-    df['Fecha'] = df.apply(lambda row: parse_date(row['Fecha'], row['Periódico']), axis=1)
+    # Filtrar las noticias que tienen un título compartido (no 'Ninguno')
+    noticias_filtradas = df[df['Titulo Compartido'] != 'Ninguno'].copy()
 
-    # Agrupar por 'Titulo Compartido' y obtener la fecha más antigua y el conteo de noticias
-    grouped = df.groupby('Titulo Compartido').agg(
-        fecha_minimo=('Fecha', 'min'),
-        conteo_noticias=('Titulo Compartido', 'size')
+    # Aplicar la función parse_date para convertir la columna 'Fecha'
+    noticias_filtradas['Fecha'] = noticias_filtradas.apply(lambda row: parse_date(row['Fecha'], row['Periódico']), axis=1)
+
+    # Agrupar por 'Titulo Compartido' y obtener la fecha más antigua, el conteo de noticias y el número de periódicos distintos
+    grouped = noticias_filtradas.groupby('Titulo Compartido').agg(
+        fecha_minima=('Fecha', 'min'),
+        conteo_noticias=('Titulo Compartido', 'size'),
+        periódicos_distintos=('Periódico', 'nunique')  # Contar el número de periódicos distintos
     ).reset_index()
 
-    # Filtrar para incluir solo los titulares similares (eliminando 'Ninguno' o equivalentes)
-    grouped_filtered = grouped[grouped['Titulo Compartido'] != 'Ninguno']
+    # Encontrar el titular con más noticias similares
+    top_titular = grouped[grouped['conteo_noticias'] == grouped['conteo_noticias'].max()]
 
     # Crear el gráfico de dispersión
     fig = px.scatter(
-        grouped_filtered,
-        x='fecha_minimo',
+        grouped,
+        x='fecha_minima',
         y='conteo_noticias',
+        size='periódicos_distintos',
+        color_discrete_sequence=['darkblue'],
+        hover_data=['Titulo Compartido'],
         labels={
-            'fecha_minimo': 'Fecha',
-            'conteo_noticias': 'Número de Noticias'
+            'fecha_minima': 'Fecha',
+            'conteo_noticias': 'Número de Noticias',
+            'periódicos_distintos': 'Periódicos Distintos'
         },
-        title='Dispersión de Noticias por Titular Similar'
+        title=''
+    )
+
+    # Añadir anotación para el titular con más noticias similares
+    for i in top_titular.index:
+        texto_anotacion = (
+            f"{top_titular.loc[i, 'Titulo Compartido']}<br>"
+            f"Fecha: {top_titular.loc[i, 'fecha_minima']:%Y-%m-%d}<br>"
+            f"Noticias: {top_titular.loc[i, 'conteo_noticias']}<br>"
+            f"Periódicos Distintos: {top_titular.loc[i, 'periódicos_distintos']}"
+        )
+        fig.add_annotation(
+            x=top_titular.loc[i, 'fecha_minima'],
+            y=top_titular.loc[i, 'conteo_noticias'],
+            text=texto_anotacion,
+            showarrow=True,
+            arrowhead=1,
+            ax=-550,  # Desplazar la punta de la flecha 50px a la izquierda del punto
+            ay=-30,  # Desplazar la punta de la flecha 50px arriba del punto
+            standoff=15,  # Distancia que la punta de la flecha se mantendrá alejada del punto
+            arrowcolor="darkblue",
+            arrowsize=1,
+            arrowwidth=1,
+            bordercolor="#c7c7c7",
+            borderwidth=1,
+            borderpad=4,
+            bgcolor="#ffffff",
+            opacity=0.8
+        )
+
+    # Ajustar el layout según sea necesario
+    fig.update_layout(
+        xaxis=dict(
+            showgrid=True,  # Muestra las líneas de la cuadrícula horizontal
+            gridcolor='rgba(128,128,128,0.2)'  # El color y la transparencia de la cuadrícula
+        ),
+        yaxis=dict(
+            showgrid=True,  # Muestra las líneas de la cuadrícula horizontal
+            gridcolor='rgba(128,128,128,0.2)',  # El color y la transparencia de la cuadrícula
+            tickvals=[ 0, 5, 10, 15, 20]
+        ),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
     )
 
     return dcc.Graph(figure=fig)
@@ -42,17 +92,26 @@ def generate_newspaper_graph():
         newspaper_counts,
         x='Periódico',
         y='Número de Noticias',
-        color='Categoría',  # Colorear las barras por categoría
+        color='Categoría',
         title='Número de Noticias por Periódico',
-        barmode='stack'  # Apilar las barras
+        barmode='stack',  # Apilar las barras
+        color_discrete_map={'Con Titulares Similares': 'darkblue', 'Sin Titulares Similares': 'darkgrey'}  # Colores personalizados
     )
+
 
     # Ajustar el layout según sea necesario
     fig.update_layout(
         xaxis_title="",  # Eliminar el título del eje X
-        yaxis_title="",  # Eliminar el título del eje Y
         showlegend=True,  # Mostrar leyenda para distinguir categorías
-        xaxis={'categoryorder':'total descending'}
+        xaxis={'categoryorder':'total descending'},
+        yaxis=dict(
+            title=None,
+            showgrid=True,  # Muestra las líneas de la cuadrícula horizontal
+            gridcolor='rgba(128,128,128,0.2)',  # El color y la transparencia de la cuadrícula
+            tickvals=[ 0, 50, 100, 150, 200]
+        ),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
     )
 
     return dcc.Graph(figure=fig)
@@ -190,7 +249,7 @@ def generate_media_spectrum(titulares_similares, periodico_seleccionado=None):
                 periodicos_representados.add(periodico)
 
         if logos_orientacion:
-            orientacion_texto_div = html.P(orientacion_texto, style={'font-weight': 'bold', 'text-align': 'left'})
+            orientacion_texto_div = html.P(orientacion_texto, style={'font-weight': 'bold', 'text-align': 'left', 'margin': '20px 0 20px 20px'})
             logos_div = html.Div(
                 children=logos_orientacion,
                 style={'display': 'inline-block', 'margin': '1px 30px 1px 30px'}

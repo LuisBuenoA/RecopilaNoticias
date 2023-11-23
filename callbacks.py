@@ -23,8 +23,14 @@ def register_callbacks(app):
         if pathname.startswith('/similar/'):
             common_title = urllib.parse.unquote(pathname.split('/')[-1])
 
+            logo = html.Div([html.A(
+                html.Img(src='/assets/logo1.png', style={'height': '150px', 'width': 'auto'}),
+                href='/')
+                ], style={'position': 'relative', 'top': '10px', 'z-index': '1000','textAlign': 'center'}
+                )
+
             # Botón o enlace para volver a la página principal
-            back_button = back_button = html.A(
+            back_button = html.A(
                 html.Button(
                     "Atrás",  # Texto del botón
                     id='back-button',  # Identificador único para el botón
@@ -68,4 +74,4 @@ def register_callbacks(app):
 
             square = generate_square(common_title, formatted_date)
             similar_news = generate_similar_news(common_title, selected_newspaper_data)
-            return [back_button] + [square] + similar_news
+            return  [back_button] + [logo] + [square] + similar_news

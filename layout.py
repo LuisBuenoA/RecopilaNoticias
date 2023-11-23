@@ -12,9 +12,16 @@ def create_layout():
     # Preparar los cuadrados para cada titular
     cuadrados = []
 
-    cuadrados.append(scatter_titles)
+            # Logo en la parte superior derecha
+    cuadrados.append(html.Div([html.A(
+                html.Img(src='/assets/logo1.png', style={'height': '150px', 'width': 'auto'}),
+                href='/')
+                ], style={'position': 'relative', 'top': '10px', 'z-index': '1000','textAlign': 'center'}
+                ))
 
     cuadrados.append(newspaper_graph_component)
+
+    cuadrados.append(scatter_titles)
 
     for titulo_compartido, _, _ in sorted(
             [

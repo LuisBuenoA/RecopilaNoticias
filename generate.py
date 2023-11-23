@@ -48,13 +48,13 @@ def generate_similar_news(primer_titular_comun, periodico_seleccionado=None):
 
     if datos_titulares.shape[0] > 0:
         opciones_periodicos = [{'label': nombre_periodicos[periodico], 'value': periodico} for periodico in periodicos_disponibles]
-        titulo_selector = html.H4(['Filtra el periódico que quieras'], style={'font-weight': 'bold','margin': '5px 10px 5px 10px'})
+        titulo_selector = html.H4(['Filtra por periódico'], style={'font-weight': 'bold', 'textAlign': 'center', 'margin': '20px 0 20px 0'})
         selector_periodico = dcc.Dropdown(
             id='newspaper-selector',
             options = [{'label': 'TODOS LOS PERIÓDICOS', 'value': 'TODOS LOS PERIÓDICOS'}] + opciones_periodicos,
             value = periodico_seleccionado,
             clearable=False,
-            style={'margin': '5px 0px 5px 0px'}
+            style={'margin': '5px 0px 20px 0px'}
         )
 
     datos_titulares['Periódico Formateado'] = datos_titulares['Periódico'].map(nombre_periodicos) 
