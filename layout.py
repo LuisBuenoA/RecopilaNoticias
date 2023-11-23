@@ -3,13 +3,16 @@ from dash import html, dcc
 from generate import generate_square
 from data import df_similares, titulo_compartido_set, df
 from utils import parse_date
-from generate_graphs import generate_newspaper_graph
+from generate_graphs import generate_newspaper_graph, generate_scatter_titles
 
+scatter_titles = generate_scatter_titles()
 newspaper_graph_component = generate_newspaper_graph()
 
 def create_layout():
     # Preparar los cuadrados para cada titular
     cuadrados = []
+
+    cuadrados.append(scatter_titles)
 
     cuadrados.append(newspaper_graph_component)
 

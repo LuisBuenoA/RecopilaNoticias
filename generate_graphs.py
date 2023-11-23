@@ -3,6 +3,33 @@ import plotly.express as px
 from utils import parse_date
 from data import df, nombre_periodicos, colores_periodicos
 
+def generate_scatter_titles():
+    # Convertir la columna de fecha a un tipo de dato de fecha
+    df['Fecha'] = df.apply(lambda row: parse_date(row['Fecha'], row['Periódico']), axis=1)
+
+    # Agrupar por 'Titulo Compartido' y obtener la fecha más antigua y el conteo de noticias
+    grouped = df.groupby('Titulo Compartido').agg(
+        fecha_minimo=('Fecha', 'min'),
+        conteo_noticias=('Titulo Compartido', 'size')
+    ).reset_index()
+
+    # Filtrar para incluir solo los titulares similares (eliminando 'Ninguno' o equivalentes)
+    grouped_filtered = grouped[grouped['Titulo Compartido'] != 'Ninguno']
+
+    # Crear el gráfico de dispersión
+    fig = px.scatter(
+        grouped_filtered,
+        x='fecha_minimo',
+        y='conteo_noticias',
+        labels={
+            'fecha_minimo': 'Fecha',
+            'conteo_noticias': 'Número de Noticias'
+        },
+        title='Dispersión de Noticias por Titular Similar'
+    )
+
+    return dcc.Graph(figure=fig)
+
 def generate_newspaper_graph():
     # Categorizar cada noticia
     df['Categoría'] = df['Titulo Compartido'].apply(lambda x: 'Con Titulares Similares' if x != 'Ninguno' else 'Sin Titulares Similares')
