@@ -3,9 +3,12 @@ import re
 from bs4 import BeautifulSoup
 import pandas as pd
 
+# Función para obtener artículos de periódicos en línea basada en una fecha y URL específicas
 def obtener_articulos(fecha, url):
     titulo_ant = ''
-    guardar=0
+    guardar = 0
+
+    # URLs base de los periódicos para construir enlaces completos a los artículos
     url_el_mundo = 'https://elmundo.es/'
     url_el_pais = 'https://elpais.com/'
     url_la_vanguardia = 'https://lavanguardia.com/'
@@ -19,20 +22,21 @@ def obtener_articulos(fecha, url):
     url_marca = 'https://marca.com/'
     url_as = 'https://as.com/'
 
-    # Crear una lista para almacenar los datos
+    # Lista para almacenar los datos recopilados de los artículos
     datos = []
+
     try:
-        # Descargar la página web
-        response = requests.get(url, verify = False)
-        response.raise_for_status()  # Esto verifica si hay un error en la respuesta
+        # Descarga del contenido de la página web del periódico
+        response = requests.get(url, verify=False)
+        response.raise_for_status()  # Verificación de errores en la respuesta HTTP
         page_content = response.content
 
-        # Analizar la página web
+        # Análisis del contenido de la página utilizando BeautifulSoup
         soup = BeautifulSoup(page_content, 'html.parser')
 
-        # Encontrar todos los enlaces a los artículos
+        # Búsqueda de todos los enlaces en la página
         enlaces = soup.find_all('a', href=True)
-        
+
         for enlace in enlaces:
             # Filtrar los enlaces que parecen ser artículos
             if (fecha in enlace['href'] or (url == url_el_diario and '.html' in enlace['href']) or (url == url_publico and ('#md=modulo-portada-bloque:' in enlace['href']) )) and ('www.amazon.' not in enlace['href']) and ('gaia.larazon' not in enlace['href']) and  ('www.mujerhoy.' not in enlace['href']) and ('venagalicia.gal' not in enlace['href']) and ('apple.com' not in enlace['href']) and ('magas.elespanol' not in enlace['href'] ) and ('mundodeportivo.com' not in enlace['href'])  and ('eldiarioar.com' not in enlace['href'] ) and ('//branded.' not in enlace['href'] ) and ('.com/vela/' not in enlace['href'] ) and ('.htmlhttps://' not in enlace['href'] ):
@@ -133,9 +137,12 @@ def obtener_articulos(fecha, url):
                 + '.xlsx'
             )
             df.to_excel(excel_filename, index=False)
+
     except requests.exceptions.HTTPError as http_err:
+        # Manejo de errores de conexión HTTP
         print(f'Error HTTP: {http_err}')
     except Exception as err:
+        # Manejo de otros tipos de errores
         print(f'Otro error: {err}')
 
 
@@ -158,6 +165,7 @@ url_marca = 'https://marca.com/'
 urls = []
 urls.extend([url_el_mundo, url_el_pais, url_la_vanguardia, url_el_confidencial, url_la_voz_de_galicia, url_el_diario, url_la_razon, url_marca])
 
+# Procesamiento de cada URL para obtener los artículos
 for url in urls:
     print('Periodico:', url)
     obtener_articulos(fecha_formateada, url)

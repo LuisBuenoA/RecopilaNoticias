@@ -4,46 +4,49 @@ from utils import parse_date
 from generate_graphs import generate_media_spectrum, generate_time_graph
 from data import df_similares, nombre_periodicos
 
-# Define la función para generar el diseño de cada "cuadrado" con un titular similar
+# Función para generar el diseño de cada "cuadrado" con un titular similar
 def generate_square(titulo_compartido, fecha, periodico_seleccionado=None):
-    # Codifica el titular compartido para evitar problemas con caracteres especiales en la URL
+    # Codificación del titular compartido para su uso en URL
     encoded_titulo = urllib.parse.quote(titulo_compartido)
 
-    # Define estilos para que los enlaces parezcan encabezados en lugar de enlaces
+    # Estilos para los enlaces, haciéndolos parecer encabezados
     link_style = {
-        'color': 'black',  # El color del texto, igual al texto normal
-        'textDecoration': 'none',  # Elimina el subrayado de los enlaces
-        'font-weight': 'bold',  # Hace que la fuente sea en negrita como un encabezado
-        'font-size': '24px' # Ajusta el tamaño del texto al de un encabezado
+        'color': 'black',
+        'textDecoration': 'none',
+        'font-weight': 'bold',
+        'font-size': '24px'
     }
 
-    # Crea una lista de componentes hijos que incluyen el enlace, la fecha y la gráfica
+    # Creación de componentes HTML para el cuadrado, incluyendo enlace y fecha
     children = [
         dcc.Link(
-            html.H2(titulo_compartido),  # Título Compartido como enlace
+            html.H2(titulo_compartido),
             href=f'/similar/{encoded_titulo}',
-            style=link_style  # Aplica los estilos definidos al enlace
+            style=link_style
         ),
-        html.P(f"{fecha}"),  # Fecha
-        generate_time_graph(titulo_compartido, periodico_seleccionado)  # Gráfica de tiempo
+        html.P(f"{fecha}"),
+        generate_time_graph(titulo_compartido, periodico_seleccionado)
     ]
 
     return html.Div(
-        className='six columns',  # Clase CSS para estilos
-        style={'margin': '10px 30px 0px 30px'},  # Añade un margen inferior para separar los cuadrados
+        className='six columns',
+        style={'margin': '10px 30px 0px 30px'},
         children=children
     )
 
+# Función para generar noticias similares en la página
 def generate_similar_news(primer_titular_comun, periodico_seleccionado=None):
     titulares_similares_div = []
     titulares_utilizados = set()
 
+    # Filtrado de datos basado en el titular común
     datos_titulares = df_similares.get_group(primer_titular_comun).copy()
 
-    # Filtrar por periódico seleccionado si hay uno
+    # Filtro opcional por periódico
     if periodico_seleccionado:
         datos_titulares = datos_titulares[datos_titulares['Periódico'] == periodico_seleccionado]
 
+    # Creación del espectro de medios y selector de periódico
     periodicos_disponibles = datos_titulares['Periódico'].unique()
 
     if datos_titulares.shape[0] > 0:
@@ -67,15 +70,17 @@ def generate_similar_news(primer_titular_comun, periodico_seleccionado=None):
     titulares_similares_div.insert(1, titulo_selector)
     titulares_similares_div.insert(2, selector_periodico)
 
-    # Define estilos para que los enlaces parezcan encabezados en lugar de enlaces
+    # Estilos para enlaces de titulares similares
     link_style = {
-        'color': 'black',  # El color del texto, igual al texto normal
-        'textDecoration': 'none',  # Elimina el subrayado de los enlaces
-        'font-weight': 'bold',  # Hace que la fuente sea en negrita como un encabezado
-        'font-size': '20px'  # Ajusta el tamaño del texto al de un encabezado
+        'color': 'black',
+        'textDecoration': 'none',
+        'font-weight': 'bold',
+        'font-size': '20px'
     }
 
+    # Bucle para añadir cada titular similar al layout
     for _, row in datos_titulares.iterrows():
+        # Extracción y formateo de datos de cada titular similar
         titular_similar = row['Título']
         enlace_articulo = row['Enlace']
         periodico_formateado = row['Periódico Formateado']  # Usa el nombre formateado del periódico
@@ -84,8 +89,10 @@ def generate_similar_news(primer_titular_comun, periodico_seleccionado=None):
         processed_date = parse_date(row['Fecha'], row['Periódico'])
         # Formatear la fecha procesada según sea necesario
         formatted_date = processed_date.strftime('%Y/%m/%d %H:%M')
-
+        
+        # Comprobación para evitar duplicados
         if titular_similar not in titulares_utilizados:
+            # Creación de componente para cada titular similar
             titulares_similares_div.append(
                 html.Div([
                     dcc.Link(

@@ -7,29 +7,35 @@ import urllib.parse
 from layout import create_layout
 from utils import parse_date
 
+# Función para registrar los callbacks en una aplicación Dash
 def register_callbacks(app):
+    # Callback para actualizar el periódico seleccionado
     @app.callback(
         Output('selected-newspaper-store', 'data'),
         [Input('newspaper-selector', 'value')]
     )
     def update_selected_newspaper(value):
+        # Devuelve el valor seleccionado en el selector de periódicos
         return value
-    
+
+    # Callback para actualizar el contenido de la página basado en la URL y el periódico seleccionado
     @app.callback(
         Output('page-content', 'children'),
         [Input('url', 'pathname'), Input('selected-newspaper-store', 'data')]
     )
     def update_page_content(pathname, selected_newspaper_data):
+        # Procesa la ruta para mostrar noticias similares
         if pathname.startswith('/similar/'):
             common_title = urllib.parse.unquote(pathname.split('/')[-1])
 
+            # Creación del logotipo de la página
             logo = html.Div([html.A(
                 html.Img(src='/assets/logo1.png', style={'height': '150px', 'width': 'auto'}),
                 href='/')
                 ], style={'position': 'relative', 'top': '10px', 'z-index': '1000','textAlign': 'center'}
                 )
 
-            # Botón o enlace para volver a la página principal
+            # Creación del botón para volver a la página principal
             back_button = html.A(
                 html.Button(
                     "Atrás",  # Texto del botón
@@ -52,15 +58,14 @@ def register_callbacks(app):
                 href='/'  # Enlace a la página principal
             )
 
-            # Si selected_newspaper_data es "TODOS LOS PERIÓDICOS" o None, no aplicar ningún filtro
+            # Aplicación de filtros basados en el periódico seleccionado
             if selected_newspaper_data in [None, "TODOS LOS PERIÓDICOS"]:
                 selected_newspaper_data = None
 
-            # Obtener todas las fechas para este titular y el periódico correspondiente
+            # Procesamiento y obtención de fechas válidas para las noticias similares
             grupo_datos = df[df['Titulo Compartido'] == common_title]
             fechas_validas = [(d, grupo_datos[grupo_datos['Fecha'] == d]['Periódico'].iloc[0]) for d in grupo_datos['Fecha'] if d is not None]
 
-            # Encontrar la fecha más antigua y procesarla
             if fechas_validas:
                 fecha_mas_antigua, nombre_periodico = min(
                     fechas_validas,
@@ -72,6 +77,7 @@ def register_callbacks(app):
             else:
                 formatted_date = 'Fecha desconocida'
 
+            # Generación de componentes visuales para mostrar el título y noticias similares
             square = generate_square(common_title, formatted_date)
             similar_news = generate_similar_news(common_title, selected_newspaper_data)
             return  [back_button] + [logo] + [square] + similar_news
