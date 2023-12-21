@@ -1,5 +1,8 @@
 # Recopila Noticias
 
+Mirar el pdf o el pptx de El Informado
+
+# Desarrollo
 ## Resumen
 
 Recopilar las mismas noticias de distintos periódicos y etiquetarlas según la orientación política.
